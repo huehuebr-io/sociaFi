@@ -6,6 +6,21 @@ import { verifySignature } from "../utils/web3.js";
 const router = express.Router();
 
 /**
+ * GET /auth/nonce
+ */
+router.get("/nonce", async (req, res) => {
+  const nonce = crypto.randomUUID();
+
+  res.cookie("hbr_nonce", nonce, {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true
+  });
+
+  res.json({ nonce });
+});
+
+/**
  * POST /auth/login
  */
 router.post("/login", async (req, res) => {
@@ -15,6 +30,7 @@ router.post("/login", async (req, res) => {
     return res.json({ success: false, message: "Dados inválidos" });
   }
 
+  // valida assinatura
   const valid = verifySignature(address, message, signature);
   if (!valid) {
     return res.json({ success: false, message: "Assinatura inválida" });
@@ -24,24 +40,68 @@ router.post("/login", async (req, res) => {
   const userRes = await db.query(
     `INSERT INTO users (wallet)
      VALUES ($1)
-     ON CONFLICT (wallet) DO UPDATE SET wallet = EXCLUDED.wallet
+     ON CONFLICT (wallet)
+     DO UPDATE SET wallet = EXCLUDED.wallet
      RETURNING id, wallet, setup_completed`,
     [address.toLowerCase()]
   );
 
   const user = userRes.rows[0];
 
+  // cria JWT
   const token = jwt.sign(
     { id: user.id, wallet: user.wallet },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
 
+  // salva JWT em cookie
+  res.cookie("hbr_auth", token, {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
   res.json({
     success: true,
-    token,
-    setup_completed: user.setup_completed
+    new_user: !user.setup_completed
   });
+});
+
+/**
+ * GET /auth/me
+ */
+router.get("/me", async (req, res) => {
+  const token = req.cookies?.hbr_auth;
+  if (!token) {
+    return res.json({ logged: false });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    res.json({
+      logged: true,
+      address: decoded.wallet
+    });
+
+  } catch {
+    res.json({ logged: false });
+  }
+});
+
+/**
+ * POST /auth/logout
+ */
+router.post("/logout", (req, res) => {
+  res.clearCookie("hbr_auth", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true
+  });
+
+  res.json({ success: true });
 });
 
 export default router;
