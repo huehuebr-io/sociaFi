@@ -25,69 +25,73 @@ router.get("/nonce", (req, res) => {
  * POST /auth/login
  */
 router.post("/login", async (req, res) => {
-  const { address, message, signature } = req.body;
+  try {
+    const { address, message, signature } = req.body;
 
-  if (!address || !message || !signature) {
-    return res.json({ success: false, message: "Dados inválidos" });
+    if (!address || !message || !signature) {
+      return res.json({ success: false, message: "Dados inválidos" });
+    }
+
+    const nonce = req.cookies?.hbr_nonce;
+
+    if (!nonce) {
+      return res.json({
+        success: false,
+        message: "Nonce ausente (cookie não encontrado)"
+      });
+    }
+
+    // valida assinatura
+    const valid = verifySignature(address, message, signature);
+    if (!valid) {
+      return res.json({
+        success: false,
+        message: "Assinatura inválida"
+      });
+    }
+
+    // cria usuário se não existir
+    const userRes = await db.query(
+      `
+      INSERT INTO users (wallet)
+      VALUES ($1)
+      ON CONFLICT (wallet)
+      DO UPDATE SET wallet = EXCLUDED.wallet
+      RETURNING id, wallet, setup_completed
+      `,
+      [address.toLowerCase()]
+    );
+
+    const user = userRes.rows[0];
+
+    const token = jwt.sign(
+      { id: user.id, wallet: user.wallet },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.clearCookie("hbr_nonce");
+
+    res.cookie("hbr_auth", token, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({
+      success: true,
+      new_user: !user.setup_completed
+    });
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Erro interno no login"
+    });
   }
-
-  const expectedNonce = req.cookies?.hbr_nonce;
-  if (!expectedNonce) {
-    return res.json({ success: false, message: "Nonce ausente ou expirado" });
-  }
-
-  // valida assinatura + nonce + prefixo
-  const valid = verifySignature({
-    address,
-    message,
-    signature,
-    expectedNonce
-  });
-
-  if (!valid) {
-    return res.json({ success: false, message: "Assinatura inválida" });
-  }
-
-  // consome nonce (anti replay)
-  res.clearCookie("hbr_nonce", {
-    httpOnly: true,
-    sameSite: "none",
-    secure: true
-  });
-
-  // cria usuário se não existir
-  const userRes = await db.query(
-    `INSERT INTO users (wallet)
-     VALUES ($1)
-     ON CONFLICT (wallet)
-     DO UPDATE SET wallet = EXCLUDED.wallet
-     RETURNING id, wallet, setup_completed`,
-    [address.toLowerCase()]
-  );
-
-  const user = userRes.rows[0];
-
-  // cria JWT
-  const token = jwt.sign(
-    { id: user.id, wallet: user.wallet },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
-
-  // salva JWT em cookie
-  res.cookie("hbr_auth", token, {
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
-
-  res.json({
-    success: true,
-    new_user: !user.setup_completed
-  });
 });
-
 /**
  * GET /auth/me
  */
