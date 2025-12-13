@@ -18,7 +18,7 @@ async function initMoralis() {
  * GET /nft/founders
  * Retorna NFTs Founder do usuário autenticado
  */
-router.get("/founders", authMiddleware, async (req, res) => {
+router.get("/founders", async (req, res) => {
   try {
     await initMoralis();
 
