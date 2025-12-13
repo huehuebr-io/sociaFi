@@ -7,7 +7,6 @@ import { authMiddleware } from "../middleware/auth.js";
 import { db } from "../db.js";
 
 export default router;
-const router = express.Router();
 
 // ================== UPLOAD CONFIG ==================
 const storage = multer.diskStorage({
