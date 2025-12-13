@@ -6,11 +6,13 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import feedRoutes from "./routes/feed.routes.js";
-app.use("/feed", feedRoutes);
 import nftRoutes from "./routes/nft.routes.js";
-app.use("/nft", nftRoutes);
 import memeRoutes from "./routes/meme.routes.js";
+
+app.use("/nft", nftRoutes);
+app.use("/feed", feedRoutes);
 app.use("/memes", memeRoutes);
+app.use("/uploads", express.static("uploads"));
 
 dotenv.config();
 
