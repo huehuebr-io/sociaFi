@@ -1,10 +1,58 @@
 // routes/meme.routes.js
+const router = express.Router();
 import express from "express";
-import { db } from "../db.js";
+import multer from "multer";
+import path from "path";
 import { authMiddleware } from "../middleware/auth.js";
+import { db } from "../db.js";
 
+export default router;
 const router = express.Router();
 
+// ================== UPLOAD CONFIG ==================
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, Date.now() + ext);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+// ================== POST MEME ==================
+router.post("/", authMiddleware, upload.single("media"), async (req, res) => {
+  const { caption, category } = req.body;
+
+  if (!req.file) {
+    return res.json({ success: false, message: "Imagem obrigatória" });
+  }
+
+  // (ALPHA) aqui depois entra o gating Founder real
+  const mediaUrl = `/uploads/${req.file.filename}`;
+
+  const { rows } = await db.query(
+    `
+    INSERT INTO memes (user_id, caption, media_url, category)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id
+    `,
+    [
+      req.user.id,
+      caption || null,
+      mediaUrl,
+      category || "Geral"
+    ]
+  );
+
+  res.json({
+    success: true,
+    meme_id: rows[0].id
+  });
+});
 /**
  * GET /memes/:id
  * Ver meme público
