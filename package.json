@@ -14,6 +14,7 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.5",
     "ethers": "^6.12.1",
-    "moralis": "^2.x.x"
+    "moralis": "^2.x.x",
+    "multer": "^1.4.5-lts.1"
   }
 }
