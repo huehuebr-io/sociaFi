@@ -9,22 +9,19 @@ import feedRoutes from "./routes/feed.routes.js";
 import nftRoutes from "./routes/nft.routes.js";
 import memeRoutes from "./routes/meme.routes.js";
 
-app.use("/nft", nftRoutes);
-app.use("/feed", feedRoutes);
-app.use("/memes", memeRoutes);
-app.use("/uploads", express.static("uploads"));
-
 dotenv.config();
 
+/* =====================================================
+   APP INIT (TEM QUE VIR ANTES DE QUALQUER app.use)
+===================================================== */
 const app = express();
 
-// =====================================================
-// MIDDLEWARES GLOBAIS
-// =====================================================
+/* =====================================================
+   MIDDLEWARES GLOBAIS
+===================================================== */
 app.use(express.json());
 app.use(cookieParser());
 
-// CORS CORRETO PARA SOCIALFI
 app.use(cors({
   origin: [
     "https://huehuebr.io",
@@ -33,22 +30,30 @@ app.use(cors({
   credentials: true
 }));
 
-// =====================================================
-// HEALTH CHECK
-// =====================================================
+/* =====================================================
+   HEALTH CHECK
+===================================================== */
 app.get("/", (req, res) => {
   res.json({ status: "HueHueBR SocialFi API online" });
 });
 
-// =====================================================
-// ROTAS
-// =====================================================
+/* =====================================================
+   ROTAS
+===================================================== */
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
+app.use("/feed", feedRoutes);
+app.use("/nft", nftRoutes);
+app.use("/memes", memeRoutes);
 
-// =====================================================
-// START
-// =====================================================
+/* =====================================================
+   STATIC FILES
+===================================================== */
+app.use("/uploads", express.static("uploads"));
+
+/* =====================================================
+   START SERVER
+===================================================== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("🚀 HueHueBR API rodando na porta", PORT);
