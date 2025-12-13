@@ -1,6 +1,5 @@
 import express from "express";
 import Moralis from "moralis";
-import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
