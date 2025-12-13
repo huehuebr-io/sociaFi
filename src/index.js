@@ -9,6 +9,8 @@ import feedRoutes from "./routes/feed.routes.js";
 app.use("/feed", feedRoutes);
 import nftRoutes from "./routes/nft.routes.js";
 app.use("/nft", nftRoutes);
+import memeRoutes from "./routes/meme.routes.js";
+app.use("/memes", memeRoutes);
 
 dotenv.config();
 
