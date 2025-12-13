@@ -1,5 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { db } from "../db.js";
 import { verifySignature } from "../utils/web3.js";
 
@@ -8,7 +9,7 @@ const router = express.Router();
 /**
  * GET /auth/nonce
  */
-router.get("/nonce", async (req, res) => {
+router.get("/nonce", (req, res) => {
   const nonce = crypto.randomUUID();
 
   res.cookie("hbr_nonce", nonce, {
@@ -30,11 +31,29 @@ router.post("/login", async (req, res) => {
     return res.json({ success: false, message: "Dados inválidos" });
   }
 
-  // valida assinatura
-  const valid = verifySignature(address, message, signature);
+  const expectedNonce = req.cookies?.hbr_nonce;
+  if (!expectedNonce) {
+    return res.json({ success: false, message: "Nonce ausente ou expirado" });
+  }
+
+  // valida assinatura + nonce + prefixo
+  const valid = verifySignature({
+    address,
+    message,
+    signature,
+    expectedNonce
+  });
+
   if (!valid) {
     return res.json({ success: false, message: "Assinatura inválida" });
   }
+
+  // consome nonce (anti replay)
+  res.clearCookie("hbr_nonce", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true
+  });
 
   // cria usuário se não existir
   const userRes = await db.query(
@@ -72,7 +91,7 @@ router.post("/login", async (req, res) => {
 /**
  * GET /auth/me
  */
-router.get("/me", async (req, res) => {
+router.get("/me", (req, res) => {
   const token = req.cookies?.hbr_auth;
   if (!token) {
     return res.json({ logged: false });
