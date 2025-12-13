@@ -1,17 +1,28 @@
 import jwt from "jsonwebtoken";
 
 export function authMiddleware(req, res, next) {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const token = req.cookies?.hbr_auth;
 
   if (!token) {
-    return res.status(401).json({ success: false, message: "Token ausente" });
+    return res.status(401).json({
+      success: false,
+      message: "Não autenticado"
+    });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    req.user = {
+      id: decoded.id,
+      wallet: decoded.wallet
+    };
+
     next();
-  } catch {
-    return res.status(401).json({ success: false, message: "Token inválido" });
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      message: "Sessão inválida ou expirada"
+    });
   }
 }
