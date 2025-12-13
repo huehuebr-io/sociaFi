@@ -15,7 +15,8 @@ dotenv.config();
    APP INIT (TEM QUE VIR ANTES DE QUALQUER app.use)
 ===================================================== */
 const app = express();
-
+// 🔥 OBRIGATÓRIO NO RAILWAY
+app.set("trust proxy", 1);
 /* =====================================================
    MIDDLEWARES GLOBAIS
 ===================================================== */
