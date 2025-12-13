@@ -1,53 +1,47 @@
 import express from "express";
 import Moralis from "moralis";
+import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// init Moralis uma vez
-let moralisStarted = false;
-async function initMoralis() {
-  if (!moralisStarted) {
-    await Moralis.start({
-      apiKey: process.env.MORALIS_API_KEY
-    });
-    moralisStarted = true;
-  }
+// inicializa Moralis UMA VEZ
+if (!Moralis.Core.isStarted) {
+  await Moralis.start({
+    apiKey: process.env.MORALIS_API_KEY
+  });
 }
 
 /**
  * GET /nft/founders
- * Retorna NFTs Founder do usuário autenticado
+ * Retorna SOMENTE NFTs Founder da wallet do usuário
  */
-router.get("/founders", async (req, res) => {
+router.get("/founders", authMiddleware, async (req, res) => {
   try {
-    await initMoralis();
-
-    const wallet = req.user.wallet;
-    const contract = process.env.FOUNDER_CONTRACT;
+    const wallet = req.user.wallet.toLowerCase();
 
     const response = await Moralis.EvmApi.nft.getWalletNFTs({
       address: wallet,
-      chain: process.env.BSC_CHAIN || "0x38",
-      tokenAddresses: [contract],
-      normalizeMetadata: true
+      chain: "0x38", // BSC
+      tokenAddresses: [process.env.FOUNDER_CONTRACT]
     });
 
-    const nfts = response.result || [];
-
-    const items = nfts.map(nft => ({
+    const items = response.result.map(nft => ({
       id: nft.tokenId,
-      image: nft.normalized_metadata?.image || null,
-      name: nft.normalized_metadata?.name || "Founder NFT"
-    })).filter(n => n.image);
+      image: nft.metadata?.image
+        ? nft.metadata.image.replace(
+            "ipfs://",
+            "https://ipfs.io/ipfs/"
+          )
+        : "https://huehuebr.io/assets/default-avatar.png"
+    }));
 
     res.json({
       success: true,
-      hasFounder: items.length > 0,
       items
     });
 
   } catch (err) {
-    console.error("Erro Moralis:", err);
+    console.error("NFT FOUNDERS ERROR:", err);
     res.status(500).json({
       success: false,
       message: "Falha ao consultar NFTs"
