@@ -41,13 +41,16 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    // =====================================================
     // valida assinatura
+    // =====================================================
     const valid = verifySignature({
-  address,
-  message,
-  signature,
-  expectedNonce: req.cookies.hbr_nonce
-});
+      address,
+      message,
+      signature,
+      expectedNonce: nonce
+    });
+
     if (!valid) {
       return res.json({
         success: false,
@@ -55,39 +58,40 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // cria usuário se não existir
-    const userRes = await db.query(
+    // =====================================================
+    // BUSCAR OU CRIAR USUÁRIO (SEM ON CONFLICT)
+    // =====================================================
     const wallet = address.toLowerCase();
 
-// 1️⃣ tenta buscar usuário existente
-const existing = await db.query(
-  `
-  SELECT id, wallet, setup_completed
-  FROM users
-  WHERE wallet = $1
-  `,
-  [wallet]
-);
+    const existing = await db.query(
+      `
+      SELECT id, wallet, setup_completed
+      FROM users
+      WHERE wallet = $1
+      `,
+      [wallet]
+    );
 
-let user;
+    let user;
 
-// 2️⃣ se existir, usa
-if (existing.rows.length > 0) {
-  user = existing.rows[0];
-} else {
-  // 3️⃣ se não existir, cria
-  const created = await db.query(
-    `
-    INSERT INTO users (wallet)
-    VALUES ($1)
-    RETURNING id, wallet, setup_completed
-    `,
-    [wallet]
-  );
+    if (existing.rows.length > 0) {
+      user = existing.rows[0];
+    } else {
+      const created = await db.query(
+        `
+        INSERT INTO users (wallet)
+        VALUES ($1)
+        RETURNING id, wallet, setup_completed
+        `,
+        [wallet]
+      );
 
-  user = created.rows[0];
-}
-    
+      user = created.rows[0];
+    }
+
+    // =====================================================
+    // JWT + COOKIE
+    // =====================================================
     const token = jwt.sign(
       { id: user.id, wallet: user.wallet },
       process.env.JWT_SECRET,
@@ -116,11 +120,13 @@ if (existing.rows.length > 0) {
     });
   }
 });
+
 /**
  * GET /auth/me
  */
 router.get("/me", (req, res) => {
   const token = req.cookies?.hbr_auth;
+
   if (!token) {
     return res.json({ logged: false });
   }
