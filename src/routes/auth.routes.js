@@ -42,7 +42,12 @@ router.post("/login", async (req, res) => {
     }
 
     // valida assinatura
-    const valid = verifySignature(address, message, signature);
+    const valid = verifySignature({
+  address,
+  message,
+  signature,
+  expectedNonce: req.cookies.hbr_nonce
+});
     if (!valid) {
       return res.json({
         success: false,
