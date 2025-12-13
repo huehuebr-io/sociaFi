@@ -57,18 +57,37 @@ router.post("/login", async (req, res) => {
 
     // cria usuário se não existir
     const userRes = await db.query(
-      `
-      INSERT INTO users (wallet)
-      VALUES ($1)
-      ON CONFLICT (wallet)
-      DO UPDATE SET wallet = EXCLUDED.wallet
-      RETURNING id, wallet, setup_completed
-      `,
-      [address.toLowerCase()]
-    );
+    const wallet = address.toLowerCase();
 
-    const user = userRes.rows[0];
+// 1️⃣ tenta buscar usuário existente
+const existing = await db.query(
+  `
+  SELECT id, wallet, setup_completed
+  FROM users
+  WHERE wallet = $1
+  `,
+  [wallet]
+);
 
+let user;
+
+// 2️⃣ se existir, usa
+if (existing.rows.length > 0) {
+  user = existing.rows[0];
+} else {
+  // 3️⃣ se não existir, cria
+  const created = await db.query(
+    `
+    INSERT INTO users (wallet)
+    VALUES ($1)
+    RETURNING id, wallet, setup_completed
+    `,
+    [wallet]
+  );
+
+  user = created.rows[0];
+}
+    
     const token = jwt.sign(
       { id: user.id, wallet: user.wallet },
       process.env.JWT_SECRET,
