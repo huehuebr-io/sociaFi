@@ -147,6 +147,9 @@ router.get("/me", (req, res) => {
 /**
  * POST /auth/logout
  */
+/**
+ * POST /auth/logout
+ */
 router.post("/logout", (req, res) => {
   res.clearCookie("hbr_auth", {
     httpOnly: true,
@@ -154,7 +157,13 @@ router.post("/logout", (req, res) => {
     secure: true
   });
 
-  res.json({ success: true });
+  res.clearCookie("hbr_nonce", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true
+  });
+
+  return res.json({ success: true });
 });
 
 export default router;
