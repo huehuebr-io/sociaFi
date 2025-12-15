@@ -162,20 +162,21 @@ router.get("/me", (req, res) => {
 /**
  * POST /auth/logout
  */
+// routes/auth.routes.js
 router.post("/logout", (req, res) => {
   res.clearCookie("hbr_auth", {
     httpOnly: true,
-    sameSite: "none",
+    sameSite: "lax",
     secure: true
   });
-
   res.clearCookie("hbr_nonce", {
     httpOnly: true,
     sameSite: "none",
     secure: true
   });
 
-  return res.json({ success: true });
+  res.json({ success: true });
 });
+
 
 export default router;
