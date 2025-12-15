@@ -72,6 +72,18 @@ router.post("/login", async (req, res) => {
       [wallet]
     );
 
+    const isFounder = await checkFounder(address);
+
+await db.query(
+  `
+  UPDATE users
+  SET is_founder = $1
+  WHERE wallet = $2
+  `,
+  [isFounder, address]
+);
+
+
     let user;
 
     if (existing.rows.length > 0) {
