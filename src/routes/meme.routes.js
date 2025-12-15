@@ -1,17 +1,19 @@
+// src/routes/meme.routes.js
 import express from "express";
 import multer from "multer";
 import path from "path";
 import { authMiddleware } from "../middleware/auth.js";
 import { db } from "../db.js";
-import { checkFounder } from "../services/founder.js"; // 👈 FUNÇÃO ON-CHAIN
+import { checkFounder } from "../services/founder.js";
 
 const router = express.Router();
 export default router;
 
 /* =====================================================
-   UPLOAD CONFIG (SEGURO)
+   UPLOAD CONFIG (MEMORY — Railway Safe)
 ===================================================== */
 const upload = multer({
+  storage: multer.memoryStorage(), // 🔥 IMPORTANTE
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter(req, file, cb) {
     const allowed = ["image/png", "image/jpeg", "image/webp"];
@@ -19,18 +21,11 @@ const upload = multer({
       return cb(new Error("Formato inválido"));
     }
     cb(null, true);
-  },
-  storage: multer.diskStorage({
-    destination: "uploads/memes",
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `meme_${Date.now()}${ext}`);
-    }
-  })
+  }
 });
 
 /* =====================================================
-   POST MEME (FOUNDER ONLY — VIA NFT)
+   POST MEME (FOUNDER ONLY — ON-CHAIN)
 ===================================================== */
 router.post(
   "/",
@@ -38,10 +33,10 @@ router.post(
   upload.single("media"),
   async (req, res) => {
     try {
-      // 🔒 1) Verificar NFT Founder (ON-CHAIN)
-      const founderNFTs = await checkFounder(req.user.wallet);
+      // 🔒 1) Verificar Founder ON-CHAIN
+      const isFounder = await checkFounder(req.user.wallet);
 
-      if (!founderNFTs || founderNFTs.length === 0) {
+      if (!isFounder) {
         return res.json({
           success: false,
           message: "Apenas Founders podem postar memes no momento."
@@ -57,15 +52,19 @@ router.post(
       }
 
       const { caption, category } = req.body;
-      const mediaUrl = `/uploads/memes/${req.file.filename}`;
 
-      // 💾 3) Salvar meme
+      // =====================================================
+      // 🚀 3) Upload para huehuebr.io (API externa)
+      // =====================================================
+      const mediaUrl = await uploadToHueHueBR(req.file);
+
+      // 💾 4) Salvar no banco
       const { rows } = await db.query(
         `
         INSERT INTO memes
-          (user_id, caption, media_url, category, is_nft)
+          (user_id, caption, media_url, category, is_nft, created_at)
         VALUES
-          ($1, $2, $3, $4, false)
+          ($1, $2, $3, $4, false, NOW())
         RETURNING id
         `,
         [
