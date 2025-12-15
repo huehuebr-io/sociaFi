@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import { authMiddleware } from "../middleware/auth.js";
 import { db } from "../db.js";
-import { getFounderNFTs } from "../services/nfts.js"; // 👈 FUNÇÃO ON-CHAIN
+import { getFounderNFTs } from "../js/meus-nfts.js"; // 👈 FUNÇÃO ON-CHAIN
 
 const router = express.Router();
 export default router;
