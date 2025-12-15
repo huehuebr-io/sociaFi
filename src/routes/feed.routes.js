@@ -1,44 +1,43 @@
 import express from "express";
+import { db } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
-
-// mock temporário
-const POSTS = [];
+export default router;
 
 /**
  * GET /feed
+ * Feed global (memes reais)
  */
-router.get("/", authMiddleware, (req, res) => {
-  res.json({
-    success: true,
-    posts: POSTS.slice(-20).reverse()
-  });
-});
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT
+        m.id,
+        m.caption,
+        m.media_url,
+        m.category,
+        m.created_at,
+        m.is_nft,
+        u.username,
+        u.wallet,
+        u.avatar_url
+      FROM memes m
+      JOIN users u ON u.id = m.user_id
+      ORDER BY m.created_at DESC
+      LIMIT 50
+    `);
 
-/**
- * POST /feed
- * Apenas Founders no Alpha
- */
-router.post("/", authMiddleware, async (req, res) => {
-  const { text, image } = req.body;
+    res.json({
+      success: true,
+      items: rows
+    });
 
-  if (!text || text.length < 2) {
-    return res.json({ success: false, message: "Post inválido" });
+  } catch (err) {
+    console.error("FEED ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Erro ao carregar feed"
+    });
   }
-
-  // aqui depois entra NFT gating real
-  const post = {
-    id: Date.now(),
-    author: req.user.wallet,
-    text,
-    image: image || null,
-    created_at: new Date().toISOString()
-  };
-
-  POSTS.push(post);
-
-  res.json({ success: true, post });
 });
-
-export default router;
