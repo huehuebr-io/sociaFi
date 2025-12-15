@@ -9,6 +9,7 @@ import feedRoutes from "./routes/feed.routes.js";
 import nftRoutes from "./routes/nft.routes.js";
 import memeRoutes from "./routes/meme.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import followRoutes from "./routes/follow.routes.js";
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use("/feed", feedRoutes);
 app.use("/nft", nftRoutes);
 app.use("/memes", memeRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/follow", followRoutes);
 
 /* =====================================================
    STATIC FILES
