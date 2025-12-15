@@ -39,7 +39,7 @@ router.post(
   async (req, res) => {
     try {
       // 🔒 1) Verificar NFT Founder (ON-CHAIN)
-      const founderNFTs = await getFounderNFTs(req.user.wallet);
+      const founderNFTs = await checkFounder(req.user.wallet);
 
       if (!founderNFTs || founderNFTs.length === 0) {
         return res.json({
