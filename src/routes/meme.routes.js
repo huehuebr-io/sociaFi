@@ -5,6 +5,7 @@ import path from "path";
 import { authMiddleware } from "../middleware/auth.js";
 import { db } from "../db.js";
 import { checkFounder } from "../services/founder.js";
+import { uploadToHueHueBR } from "../services/uploadHueHueBR.js";
 
 const router = express.Router();
 export default router;
