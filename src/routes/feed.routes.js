@@ -66,3 +66,28 @@ router.get("/", authMiddleware, async (req, res) => {
     });
   }
 });
+
+// FEED NFT
+router.get("/nft", async (req, res) => {
+  const { rows } = await db.query(`
+    SELECT m.*, u.username, u.avatar_url
+    FROM memes m
+    JOIN users u ON u.id = m.user_id
+    WHERE m.is_nft = true
+    ORDER BY m.created_at DESC
+  `);
+
+  res.json({ success: true, items: rows });
+});
+// FEED FOLLOWING
+router.get("/following", async (req, res) => {
+  const { rows } = await db.query(`
+    SELECT m.*, u.username, u.avatar_url
+    FROM memes m
+    JOIN users u ON u.id = m.user_id
+    ORDER BY m.created_at DESC
+    LIMIT 50
+  `);
+
+  res.json({ success: true, items: rows });
+});
