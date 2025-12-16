@@ -12,7 +12,6 @@ router.get("/user/:username", async (req, res) => {
   try {
     const { username } = req.params;
 
-    // 1️⃣ usuário
     const { rows } = await db.query(
       `
       SELECT id, username, wallet, avatar_url, bio
@@ -28,10 +27,14 @@ router.get("/user/:username", async (req, res) => {
 
     const user = rows[0];
 
-    // 2️⃣ verificar founder ON-CHAIN
-    const isFounder = await checkFounder(user.wallet);
+    // 🔒 FOUNDER (NÃO QUEBRA PERFIL)
+    let isFounder = false;
+    try {
+      isFounder = await checkFounder(user.wallet);
+    } catch (e) {
+      console.warn("Founder check failed:", e.message);
+    }
 
-    // 3️⃣ contar stats
     const posts = await db.query(
       `SELECT COUNT(*) FROM memes WHERE user_id = $1`,
       [user.id]
