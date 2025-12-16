@@ -70,7 +70,9 @@ router.get("/user/:username", async (req, res) => {
 /* =====================================================
    MEMES DO USUÁRIO (PÚBLICO)
 ===================================================== */
-router.get("/u/router.get("/user/:router.get("/use/:router.get("/us/:, ernam  q, re ) => {nam
+router.get("/user/:username/memes", async (req, res) => {
+  const { username } = req.params;
+
   const { rows } = await db.query(
     `
     SELECT m.id, m.caption, m.media_url, m.created_at, m.is_nft
