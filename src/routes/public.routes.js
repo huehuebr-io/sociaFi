@@ -91,3 +91,62 @@ router.get("/user/:username/memes", async (req, res) => {
     items: rows
   });
 });
+/* =====================================================
+   FOLLOWERS (PÚBLICO)
+===================================================== */
+router.get("/user/:username/followers", async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const { rows } = await db.query(
+      `
+      SELECT u.username, u.avatar_url
+      FROM follows f
+      JOIN users u ON u.id = f.follower_id
+      JOIN users t ON t.id = f.following_id
+      WHERE t.username = $1
+      ORDER BY u.username ASC
+      `,
+      [username]
+    );
+
+    res.json({
+      success: true,
+      items: rows
+    });
+
+  } catch (err) {
+    console.error("FOLLOWERS ERROR:", err);
+    res.status(500).json({ success: false });
+  }
+});
+
+/* =====================================================
+   FOLLOWING (PÚBLICO)
+===================================================== */
+router.get("/user/:username/following", async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const { rows } = await db.query(
+      `
+      SELECT u.username, u.avatar_url
+      FROM follows f
+      JOIN users u ON u.id = f.following_id
+      JOIN users t ON t.id = f.follower_id
+      WHERE t.username = $1
+      ORDER BY u.username ASC
+      `,
+      [username]
+    );
+
+    res.json({
+      success: true,
+      items: rows
+    });
+
+  } catch (err) {
+    console.error("FOLLOWING ERROR:", err);
+    res.status(500).json({ success: false });
+  }
+});
