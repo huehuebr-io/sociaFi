@@ -35,21 +35,20 @@ router.get("/user/:username", async (req, res) => {
       console.warn("Founder check failed:", e.message);
     }
 
-    const posts = await db.query(
-      `SELECT COUNT(*) FROM memes WHERE user_id = $1`,
-      [user.id]
-    );
+    const postsRes = await db.query(
+  `SELECT COUNT(*) FROM memes WHERE user_id = $1`,
+  [user.id]
+);
 
-    const followers = await db.query(
-      `SELECT COUNT(*) FROM follows WHERE following_id = $1`,
-      [user.id]
-    );
+const followersRes = await db.query(
+  `SELECT COUNT(*) FROM follows WHERE following_id = $1`,
+  [user.id]
+);
 
-    const following = await db.query(
-      `SELECT COUNT(*) FROM follows WHERE follower_id = $1`,
-      [user.id]
-    );
-
+const followingRes = await db.query(
+  `SELECT COUNT(*) FROM follows WHERE follower_id = $1`,
+  [user.id]
+);
     res.json({
       success: true,
       user: {
