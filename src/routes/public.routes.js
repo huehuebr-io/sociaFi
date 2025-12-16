@@ -1,5 +1,6 @@
 import express from "express";
 import { db } from "../db.js";
+import { authMiddlewareOptional } from "../middleware/authOptional.js";
 import { checkFounder } from "../services/founder.js";
 
 const router = express.Router();
