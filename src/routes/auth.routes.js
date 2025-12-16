@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { db } from "../db.js";
 import { verifySignature } from "../utils/web3.js";
+import { checkFounder } from "../services/founder.js";
 
 const router = express.Router();
 
