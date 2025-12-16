@@ -8,7 +8,7 @@ export default router;
 /* =====================================================
    PERFIL PÚBLICO
 ===================================================== */
-router.get("/user/:username", async (req, res) => {
+router.get("/u/:username", async (req, res) => {
   try {
     const { username } = req.params;
 
@@ -70,7 +70,7 @@ router.get("/user/:username", async (req, res) => {
 /* =====================================================
    MEMES DO USUÁRIO (PÚBLICO)
 ===================================================== */
-router.get("/user/:username/memes", async (req, res) => {
+router.get("/u/:username/memes", async (req, res) => {
   const { username } = req.params;
 
   const { rows } = await db.query(
