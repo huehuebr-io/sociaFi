@@ -150,3 +150,46 @@ router.get("/user/:username/following", async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+/* =====================================================
+   USUÁRIO JÁ SEGUE
+===================================================== */
+router.get(
+  "/user/:username/is-following",
+  authMiddlewareOptional,
+  async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.json({ success: true, following: false });
+      }
+
+      const { username } = req.params;
+
+      const target = await db.query(
+        `SELECT id FROM users WHERE username = $1`,
+        [username]
+      );
+
+      if (!target.rows[0]) {
+        return res.json({ success: false });
+      }
+
+      const check = await db.query(
+        `
+        SELECT 1
+        FROM follows
+        WHERE follower_id = $1 AND following_id = $2
+        `,
+        [req.user.id, target.rows[0].id]
+      );
+
+      res.json({
+        success: true,
+        following: check.rowCount > 0
+      });
+
+    } catch (err) {
+      console.error("IS FOLLOWING ERROR:", err);
+      res.status(500).json({ success: false });
+    }
+  }
+);
