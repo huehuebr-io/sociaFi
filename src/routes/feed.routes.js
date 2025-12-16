@@ -79,15 +79,38 @@ router.get("/nft", async (req, res) => {
 
   res.json({ success: true, items: rows });
 });
-// FEED FOLLOWING
-router.get("/following", async (req, res) => {
-  const { rows } = await db.query(`
-    SELECT m.*, u.username, u.avatar_url
-    FROM memes m
-    JOIN users u ON u.id = m.user_id
-    ORDER BY m.created_at DESC
-    LIMIT 50
-  `);
+/* =====================================================
+   FEED SEGUINDO
+===================================================== */
+router.get("/following", authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `
+      SELECT 
+        m.id,
+        m.caption,
+        m.media_url,
+        m.created_at,
+        m.is_nft,
+        u.username,
+        u.avatar_url
+      FROM follows f
+      JOIN memes m ON m.user_id = f.following_id
+      JOIN users u ON u.id = m.user_id
+      WHERE f.follower_id = $1
+      ORDER BY m.created_at DESC
+      LIMIT 50
+      `,
+      [req.user.id]
+    );
 
-  res.json({ success: true, items: rows });
+    res.json({
+      success: true,
+      items: rows
+    });
+
+  } catch (err) {
+    console.error("FEED FOLLOWING ERROR:", err);
+    res.status(500).json({ success: false });
+  }
 });
