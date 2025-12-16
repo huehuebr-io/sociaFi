@@ -101,20 +101,27 @@ router.get("/user/:username/followers", async (req, res) => {
 
     const { rows } = await db.query(
       `
-      SELECT u.username, u.avatar_url
+      SELECT 
+        u.username,
+        u.avatar_url,
+        u.wallet
       FROM follows f
       JOIN users u ON u.id = f.follower_id
-      JOIN users t ON t.id = f.following_id
-      WHERE t.username = $1
-      ORDER BY u.username ASC
+      JOIN users target ON target.id = f.following_id
+      WHERE target.username = $1
       `,
       [username]
     );
 
-    res.json({
-      success: true,
-      items: rows
-    });
+    const items = await Promise.all(
+      rows.map(async (u) => ({
+        username: u.username,
+        avatar_url: u.avatar_url,
+        is_founder: await checkFounder(u.wallet)
+      }))
+    );
+
+    res.json({ success: true, items });
 
   } catch (err) {
     console.error("FOLLOWERS ERROR:", err);
