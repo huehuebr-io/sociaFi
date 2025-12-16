@@ -50,6 +50,7 @@ app.use("/feed", feedRoutes);
 app.use("/nft", nftRoutes);
 app.use("/memes", memeRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/public", publicRoutes);
 app.use("/follow", followRoutes);
 
 /* =====================================================
