@@ -1,29 +1,39 @@
 import express from "express";
-import { db } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { db } from "../db.js";
 
 const router = express.Router();
+export default router;
 
-/**
- * POST /follow/:userId
- * Seguir usuário
- */
-router.post("/:userId", authMiddleware, async (req, res) => {
-  const followerId = req.user.id;
-  const followingId = parseInt(req.params.userId);
-
-  if (followerId === followingId) {
-    return res.json({ success: false, message: "Não pode seguir a si mesmo" });
-  }
-
+/* =====================================================
+   FOLLOW
+===================================================== */
+router.post("/:username", authMiddleware, async (req, res) => {
   try {
+    const { username } = req.params;
+
+    const userRes = await db.query(
+      `SELECT id FROM users WHERE username = $1`,
+      [username]
+    );
+
+    if (!userRes.rows[0]) {
+      return res.json({ success: false, message: "Usuário não encontrado" });
+    }
+
+    const followingId = userRes.rows[0].id;
+
+    if (followingId === req.user.id) {
+      return res.json({ success: false, message: "Você não pode seguir a si mesmo" });
+    }
+
     await db.query(
       `
       INSERT INTO follows (follower_id, following_id)
       VALUES ($1, $2)
       ON CONFLICT DO NOTHING
       `,
-      [followerId, followingId]
+      [req.user.id, followingId]
     );
 
     res.json({ success: true });
@@ -34,60 +44,34 @@ router.post("/:userId", authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * DELETE /follow/:userId
- * Deixar de seguir
- */
-router.delete("/:userId", authMiddleware, async (req, res) => {
-  const followerId = req.user.id;
-  const followingId = parseInt(req.params.userId);
+/* =====================================================
+   UNFOLLOW
+===================================================== */
+router.delete("/:username", authMiddleware, async (req, res) => {
+  try {
+    const { username } = req.params;
 
-  await db.query(
-    `
-    DELETE FROM follows
-    WHERE follower_id = $1 AND following_id = $2
-    `,
-    [followerId, followingId]
-  );
+    const userRes = await db.query(
+      `SELECT id FROM users WHERE username = $1`,
+      [username]
+    );
 
-  res.json({ success: true });
+    if (!userRes.rows[0]) {
+      return res.json({ success: false });
+    }
+
+    await db.query(
+      `
+      DELETE FROM follows
+      WHERE follower_id = $1 AND following_id = $2
+      `,
+      [req.user.id, userRes.rows[0].id]
+    );
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("UNFOLLOW ERROR:", err);
+    res.status(500).json({ success: false });
+  }
 });
-
-/**
- * GET /follow/status/:userId
- * Ver se já segue
- */
-router.get("/status/:userId", authMiddleware, async (req, res) => {
-  const followerId = req.user.id;
-  const followingId = parseInt(req.params.userId);
-
-  const { rowCount } = await db.query(
-    `
-    SELECT 1 FROM follows
-    WHERE follower_id = $1 AND following_id = $2
-    `,
-    [followerId, followingId]
-  );
-
-  res.json({ following: rowCount > 0 });
-});
-
-/**
- * GET /follow/stats/:userId
- * Seguidores / Seguindo
- */
-router.get("/stats/:userId", async (req, res) => {
-  const userId = parseInt(req.params.userId);
-
-  const [followers, following] = await Promise.all([
-    db.query(`SELECT COUNT(*) FROM follows WHERE following_id = $1`, [userId]),
-    db.query(`SELECT COUNT(*) FROM follows WHERE follower_id = $1`, [userId])
-  ]);
-
-  res.json({
-    followers: Number(followers.rows[0].count),
-    following: Number(following.rows[0].count)
-  });
-});
-
-export default router;
