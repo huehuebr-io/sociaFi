@@ -50,19 +50,19 @@ const followingRes = await db.query(
   [user.id]
 );
     res.json({
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        wallet: user.wallet,
-        avatar_url: user.avatar_url,
-        bio: user.bio,
-        is_founder: isFounder,
-        posts: Number(posts.rows[0].count),
-        followers: Number(followers.rows[0].count),
-        following: Number(following.rows[0].count)
-      }
-    });
+  success: true,
+  user: {
+    id: user.id,
+    username: user.username,
+    wallet: user.wallet,
+    avatar_url: user.avatar_url,
+    bio: user.bio,
+    is_founder: isFounder,
+    posts: Number(postsRes.rows[0].count),
+    followers: Number(followersRes.rows[0].count),
+    following: Number(followingRes.rows[0].count)
+  }
+});
 
   } catch (err) {
     console.error("PUBLIC PROFILE ERROR:", err);
