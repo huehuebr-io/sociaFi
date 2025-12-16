@@ -9,6 +9,7 @@ import feedRoutes from "./routes/feed.routes.js";
 import nftRoutes from "./routes/nft.routes.js";
 import memeRoutes from "./routes/meme.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import publicRoutes from "./routes/public.routes.js";
 import followRoutes from "./routes/follow.routes.js";
 
 dotenv.config();
