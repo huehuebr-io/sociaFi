@@ -111,3 +111,61 @@ router.delete("/:username", authMiddleware, async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+/* =====================================================
+   SEGUIDORES DO USUÁRIO
+===================================================== */
+router.get("/user/:username/followers", async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const { rows } = await db.query(
+      `
+      SELECT
+        u.username,
+        u.avatar_url,
+        u.wallet
+      FROM follows f
+      JOIN users u ON u.id = f.follower_id
+      JOIN users target ON target.id = f.following_id
+      WHERE target.username = $1
+      ORDER BY u.username ASC
+      `,
+      [username]
+    );
+
+    res.json({ success: true, items: rows });
+
+  } catch (err) {
+    console.error("FOLLOWERS ERROR:", err);
+    res.status(500).json({ success: false });
+  }
+});
+/* =====================================================
+   QUEM O USUÁRIO SEGUE
+===================================================== */
+router.get("/user/:username/following", async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const { rows } = await db.query(
+      `
+      SELECT
+        u.username,
+        u.avatar_url,
+        u.wallet
+      FROM follows f
+      JOIN users u ON u.id = f.following_id
+      JOIN users source ON source.id = f.follower_id
+      WHERE source.username = $1
+      ORDER BY u.username ASC
+      `,
+      [username]
+    );
+
+    res.json({ success: true, items: rows });
+
+  } catch (err) {
+    console.error("FOLLOWING ERROR:", err);
+    res.status(500).json({ success: false });
+  }
+});
