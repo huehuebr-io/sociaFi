@@ -75,7 +75,7 @@ router.post("/setup", authMiddleware, async (req, res) => {
     [
       username,
       bio || null,
-      avatar_url || "/assets/default-avatar.png",
+      avatar_url || "/assets/huezin-head.png",
       nft_id || null,
       req.user.id
     ]
