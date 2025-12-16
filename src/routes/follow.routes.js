@@ -6,6 +6,42 @@ const router = express.Router();
 export default router;
 
 /* =====================================================
+   CHECK FOLLOW STATUS
+===================================================== */
+router.get("/:username", authMiddleware, async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const userRes = await db.query(
+      `SELECT id FROM users WHERE username = $1`,
+      [username]
+    );
+
+    if (!userRes.rows[0]) {
+      return res.json({ success: false });
+    }
+
+    const followingId = userRes.rows[0].id;
+
+    const check = await db.query(
+      `
+      SELECT 1 FROM follows
+      WHERE follower_id = $1 AND following_id = $2
+      `,
+      [req.user.id, followingId]
+    );
+
+    res.json({
+      success: true,
+      following: check.rowCount > 0
+    });
+
+  } catch (err) {
+    console.error("CHECK FOLLOW ERROR:", err);
+    res.status(500).json({ success: false });
+  }
+});
+/* =====================================================
    FOLLOW
 ===================================================== */
 router.post("/:username", authMiddleware, async (req, res) => {
