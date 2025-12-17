@@ -10,7 +10,7 @@ export default router;
    GET /meme/:id
    Página pública do meme
 ===================================================== */
-router.get("/meme/:id", authMiddlewareOptional, async (req, res) => {
+router.get("/:id", authMiddlewareOptional, async (req, res) => {
   try {
     const memeId = Number(req.params.id);
     if (!memeId) {
