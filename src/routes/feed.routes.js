@@ -80,6 +80,7 @@ router.get("/following", authMiddleware, async (req, res) => {
         m.created_at,
         m.is_nft,
         u.username,
+        u.wallet,
         u.avatar_url
       FROM follows f
       JOIN memes m ON m.user_id = f.following_id
@@ -91,13 +92,39 @@ router.get("/following", authMiddleware, async (req, res) => {
       [req.user.id]
     );
 
+    // 🔥 NORMALIZAR IGUAL AO FEED GLOBAL
+    const items = await Promise.all(
+      rows.map(async row => ({
+        id: row.id,
+        caption: row.caption,
+        media_url: row.media_url,
+        created_at: row.created_at,
+        is_nft: row.is_nft,
+
+        author: {
+          username: row.username,
+          avatar_url: row.avatar_url,
+          is_founder: await checkFounder(row.wallet)
+        },
+
+        stats: {
+          likes: 0,
+          comments: 0,
+          tips_hbr: 0
+        }
+      }))
+    );
+
     res.json({
       success: true,
-      items: rows
+      items
     });
 
   } catch (err) {
     console.error("FEED FOLLOWING ERROR:", err);
-    res.status(500).json({ success: false });
+    res.status(500).json({
+      success: false,
+      message: "Erro ao carregar feed seguindo"
+    });
   }
 });
