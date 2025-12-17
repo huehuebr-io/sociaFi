@@ -10,7 +10,7 @@ export default router;
  * GET /feed
  * Feed global
  */
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { rows } = await db.query(`
       SELECT
