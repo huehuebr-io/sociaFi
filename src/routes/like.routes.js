@@ -13,13 +13,13 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
   try {
     const memeId = Number(req.params.id);
 
-if (!Number.isInteger(memeId)) {
-  return res.status(400).json({
-    success: false,
-    message: "Meme inválido"
-  });
-}
-     
+    if (!Number.isInteger(memeId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Meme inválido"
+      });
+    }
+
     /* =============================
        1️⃣ BUSCAR MEME
     ============================== */
@@ -41,30 +41,47 @@ if (!Number.isInteger(memeId)) {
 
     const ownerId = memeRes.rows[0].user_id;
 
-    // ❌ não pode curtir próprio meme
-if (meme.user_id === req.user.id) {
-  return res.json({
-    success: false,
-    message: "Você não pode curtir seu próprio meme"
-  });
-}
+    /* =============================
+       2️⃣ NÃO CURTIR PRÓPRIO MEME
+    ============================== */
+    if (ownerId === req.user.id) {
+      return res.json({
+        success: false,
+        message: "Você não pode curtir seu próprio meme"
+      });
+    }
 
-// 🔒 gate
-const allowed = await canEngage(req.user.wallet);
-if (!allowed) {
-  return res.json({
-    success: false,
-    message: "Você precisa ter 1 HBR ou NFT Founder"
-  });
-}
+    /* =============================
+       3️⃣ ENGAGEMENT GATE (HBR / NFT)
+    ============================== */
+    const allowed = await canEngage(req.user.wallet);
+    if (!allowed) {
+      return res.json({
+        success: false,
+        message:
+          "Você precisa ter pelo menos 1 HBR ou um NFT Founder/Huezin para curtir"
+      });
+    }
 
-// 🔥 like único (sem unlike)
-await db.query(`
-  INSERT INTO meme_likes (meme_id, user_id)
-  VALUES ($1, $2)
-  ON CONFLICT DO NOTHING
-`);
+    /* =============================
+       4️⃣ LIKE ÚNICO (SEM UNLIKE)
+    ============================== */
+    const likeRes = await db.query(
+      `
+      INSERT INTO meme_likes (meme_id, user_id)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+      RETURNING meme_id
+      `,
+      [memeId, req.user.id]
+    );
 
+    if (!likeRes.rows.length) {
+      return res.json({
+        success: false,
+        message: "Você já curtiu este meme"
+      });
+    }
 
     res.json({ success: true });
 
