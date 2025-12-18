@@ -1,32 +1,34 @@
-import Moralis from "moralis";
+import { ethers } from "ethers";
 
+/**
+ * CONFIG
+ */
 const HBR_ADDRESS = process.env.HBR_CONTRACT.toLowerCase();
+const BSC_RPC = process.env.BSC_RPC;
+
+/**
+ * ABI mínima (balanceOf)
+ */
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)"
+];
 
 export async function getHBRBalance(wallet) {
-  if (!wallet) return 0;
-
   try {
-    const res = await Moralis.EvmApi.token.getWalletTokenBalances({
-      chain: "0x38",
-      address: wallet
-    });
+    if (!wallet) return 0;
 
-    const tokens = res.result || [];
+    const provider = new ethers.JsonRpcProvider(BSC_RPC);
+    const contract = new ethers.Contract(
+      HBR_ADDRESS,
+      ERC20_ABI,
+      provider
+    );
 
-    const hbr = tokens.find(t => {
-      if (!t?.token_address) return false;
-      return t.token_address.toLowerCase() === HBR_ADDRESS;
-    });
-
-    if (!hbr) return 0;
-
-    const balance =
-      Number(hbr.balance) / 10 ** Number(hbr.decimals);
-
-    return balance;
+    const balance = await contract.balanceOf(wallet);
+    return Number(ethers.formatUnits(balance, 18));
 
   } catch (err) {
-    console.error("HBR BALANCE ERROR:", err);
-    return 0; // 🔒 nunca quebra o sistema
+    console.error("HBR BALANCE ERROR:", err.message);
+    return 0;
   }
 }
