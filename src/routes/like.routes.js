@@ -11,8 +11,15 @@ export default router;
 ===================================================== */
 router.post("/meme/:id", authMiddleware, async (req, res) => {
   try {
-    const memeId = req.params.id;
+    const memeId = Number(req.params.id);
 
+if (!Number.isInteger(memeId)) {
+  return res.status(400).json({
+    success: false,
+    message: "Meme inválido"
+  });
+}
+     
     /* =============================
        1️⃣ BUSCAR MEME
     ============================== */
