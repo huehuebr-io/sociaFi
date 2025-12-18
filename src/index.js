@@ -12,6 +12,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import followRoutes from "./routes/follow.routes.js";
 import pageMemeRoutes from "./routes/page-meme.routes.js";
+import likeRoutes from "./routes/like.routes.js";
 
 dotenv.config();
 
