@@ -34,40 +34,30 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
 
     const ownerId = memeRes.rows[0].user_id;
 
-    /* =============================
-       2️⃣ BLOQUEAR AUTO-LIKE
-    ============================== */
-    if (ownerId === req.user.id) {
-      return res.json({
-        success: false,
-        message: "Você não pode curtir o próprio meme"
-      });
-    }
+    // ❌ não pode curtir próprio meme
+if (meme.user_id === req.user.id) {
+  return res.json({
+    success: false,
+    message: "Você não pode curtir seu próprio meme"
+  });
+}
 
-    /* =============================
-       3️⃣ GATE DE ENGAJAMENTO
-    ============================== */
-    const allowed = await canEngage(req.user.wallet);
+// 🔒 gate
+const allowed = await canEngage(req.user.wallet);
+if (!allowed) {
+  return res.json({
+    success: false,
+    message: "Você precisa ter 1 HBR ou NFT Founder"
+  });
+}
 
-    if (!allowed) {
-      return res.json({
-        success: false,
-        message:
-          "Você precisa ter pelo menos 1 HBR ou um NFT HueHueBR para curtir memes."
-      });
-    }
+// 🔥 like único (sem unlike)
+await db.query(`
+  INSERT INTO meme_likes (meme_id, user_id)
+  VALUES ($1, $2)
+  ON CONFLICT DO NOTHING
+`);
 
-    /* =============================
-       4️⃣ REGISTRAR LIKE
-    ============================== */
-    await db.query(
-      `
-      INSERT INTO meme_likes (meme_id, user_id)
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING
-      `,
-      [memeId, req.user.id]
-    );
 
     res.json({ success: true });
 
