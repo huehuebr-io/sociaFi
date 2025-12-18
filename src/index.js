@@ -13,6 +13,7 @@ import publicRoutes from "./routes/public.routes.js";
 import followRoutes from "./routes/follow.routes.js";
 import pageMemeRoutes from "./routes/page-meme.routes.js";
 import likeRoutes from "./routes/like.routes.js";
+import commentRoutes from "./routes/comment.routes.js";
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use("/public", publicRoutes);
 app.use("/follow", followRoutes);
 app.use("/meme", pageMemeRoutes);
 app.use("/like", likeRoutes);
+app.use("/comment", commentRoutes);
 /* =====================================================
    STATIC FILES
 ===================================================== */
