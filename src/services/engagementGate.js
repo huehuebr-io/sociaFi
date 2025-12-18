@@ -42,7 +42,7 @@ export async function canEngage(wallet) {
   /* =============================
      3) CHECK NFT HUEZIN (FUTURO)
   ============================== */
-/*  if (process.env.HUEZIN_CONTRACT) {
+  if (process.env.HUEZIN_CONTRACT) {
     const huezinNFTs = await Moralis.EvmApi.nft.getWalletNFTs({
       chain: "0x38",
       address,
@@ -53,4 +53,4 @@ export async function canEngage(wallet) {
   }
 
   return false;
-}*/
+}
