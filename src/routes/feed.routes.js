@@ -1,7 +1,7 @@
 import express from "express";
 import { db } from "../db.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { authMiddlewareOptional } from "../middlewareOptional/auth.js";
+import { authMiddlewareOptional } from "../authOptional/auth.js";
 import { checkFounder } from "../services/founder.js";
 
 const router = express.Router();
