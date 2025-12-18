@@ -55,7 +55,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/public", publicRoutes);
 app.use("/follow", followRoutes);
 app.use("/meme", pageMemeRoutes);
-
+app.use("/like", likeRoutes);
 /* =====================================================
    STATIC FILES
 ===================================================== */
