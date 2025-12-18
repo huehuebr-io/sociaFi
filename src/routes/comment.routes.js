@@ -11,8 +11,15 @@ export default router;
 ===================================================== */
 router.post("/meme/:id", authMiddleware, async (req, res) => {
   try {
-    const memeId = req.params.id;
+    const memeId = Number(req.params.id);
     const { content } = req.body;
+
+    if (!Number.isInteger(memeId)) {
+      return res.json({
+        success: false,
+        message: "Meme inválido"
+      });
+    }
 
     if (!content || !content.trim()) {
       return res.json({
@@ -36,11 +43,10 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
       });
     }
 
-    const ownerId = memeRes.rows[0].user_id;
-    const isOwnerComment = ownerId === req.user.id;
-
     /* =============================
        2️⃣ GATE DE ENGAJAMENTO
+       (pode comentar próprio meme,
+        mas precisa ter HBR ou NFT)
     ============================== */
     const allowed = await canEngage(req.user.wallet);
 
@@ -54,19 +60,19 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
 
     /* =============================
        3️⃣ INSERIR COMENTÁRIO
+       (SEM is_owner_comment no banco)
     ============================== */
     await db.query(
       `
       INSERT INTO meme_comments
-        (meme_id, user_id, text, is_owner_comment)
+        (meme_id, user_id, text)
       VALUES
-        ($1, $2, $3, $4)
+        ($1, $2, $3)
       `,
       [
         memeId,
         req.user.id,
-        content.trim(),
-        isOwnerComment
+        content.trim()
       ]
     );
 
@@ -77,12 +83,20 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+
 /* =====================================================
    GET COMMENTS (PÚBLICO)
 ===================================================== */
 router.get("/meme/:id", async (req, res) => {
   try {
-    const memeId = req.params.id;
+    const memeId = Number(req.params.id);
+
+    if (!Number.isInteger(memeId)) {
+      return res.json({
+        success: false,
+        items: []
+      });
+    }
 
     const { rows } = await db.query(
       `
@@ -90,14 +104,18 @@ router.get("/meme/:id", async (req, res) => {
         c.id,
         c.text,
         c.created_at,
-        c.is_owner_comment,
 
         u.username,
         u.avatar_url,
-        u.wallet
+
+        CASE
+          WHEN c.user_id = m.user_id THEN true
+          ELSE false
+        END AS is_owner_comment
 
       FROM meme_comments c
       JOIN users u ON u.id = c.user_id
+      JOIN memes m ON m.id = c.meme_id
       WHERE c.meme_id = $1
       ORDER BY c.created_at ASC
       `,
