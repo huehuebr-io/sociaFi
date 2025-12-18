@@ -7,13 +7,46 @@ const router = express.Router();
 export default router;
 
 /* =====================================================
-   LIKE MEME (SEM UNLIKE + GATE HBR/NFT)
+   LIKE MEME (SEM UNLIKE + SEM AUTO-LIKE)
 ===================================================== */
 router.post("/meme/:id", authMiddleware, async (req, res) => {
   try {
     const memeId = req.params.id;
 
-    // 🔒 GATE DE ENGAJAMENTO
+    /* =============================
+       1️⃣ BUSCAR MEME
+    ============================== */
+    const memeRes = await db.query(
+      `
+      SELECT user_id
+      FROM memes
+      WHERE id = $1
+      `,
+      [memeId]
+    );
+
+    if (!memeRes.rows[0]) {
+      return res.json({
+        success: false,
+        message: "Meme não encontrado"
+      });
+    }
+
+    const ownerId = memeRes.rows[0].user_id;
+
+    /* =============================
+       2️⃣ BLOQUEAR AUTO-LIKE
+    ============================== */
+    if (ownerId === req.user.id) {
+      return res.json({
+        success: false,
+        message: "Você não pode curtir o próprio meme"
+      });
+    }
+
+    /* =============================
+       3️⃣ GATE DE ENGAJAMENTO
+    ============================== */
     const allowed = await canEngage(req.user.wallet);
 
     if (!allowed) {
@@ -24,6 +57,9 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
       });
     }
 
+    /* =============================
+       4️⃣ REGISTRAR LIKE
+    ============================== */
     await db.query(
       `
       INSERT INTO meme_likes (meme_id, user_id)
