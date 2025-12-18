@@ -58,7 +58,7 @@ router.post("/meme/:id", authMiddleware, async (req, res) => {
     await db.query(
       `
       INSERT INTO meme_comments
-        (meme_id, user_id, content, is_owner_comment)
+        (meme_id, user_id, text, is_owner_comment)
       VALUES
         ($1, $2, $3, $4)
       `,
@@ -88,7 +88,7 @@ router.get("/meme/:id", async (req, res) => {
       `
       SELECT
         c.id,
-        c.content,
+        c.text,
         c.created_at,
         c.is_owner_comment,
 
