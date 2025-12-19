@@ -12,11 +12,14 @@ export default router;
 router.get("/:id", authMiddlewareOptional, async (req, res) => {
   try {
     const memeId = Number(req.params.id);
-    if (!memeId) {
+    if (!Number.isInteger(memeId)) {
       return res.json({ success: false });
     }
 
-    const { rows } = await db.query(
+    /* =============================
+       MEME + DONO
+    ============================== */
+    const memeRes = await db.query(
       `
       SELECT
         m.id,
@@ -35,37 +38,73 @@ router.get("/:id", authMiddlewareOptional, async (req, res) => {
       [memeId]
     );
 
-    if (!rows[0]) {
+    if (!memeRes.rows[0]) {
       return res.json({ success: false });
     }
 
-    const row = rows[0];
+    const meme = memeRes.rows[0];
 
+    /* =============================
+       STATS
+    ============================== */
+    const likesRes = await db.query(
+      `SELECT COUNT(*) FROM meme_likes WHERE meme_id = $1`,
+      [memeId]
+    );
+
+    const commentsRes = await db.query(
+      `SELECT COUNT(*) FROM meme_comments WHERE meme_id = $1`,
+      [memeId]
+    );
+
+    /* =============================
+       VIEWER INFO
+    ============================== */
+    let viewerLiked = false;
+    let isOwner = false;
+
+    if (req.user) {
+      isOwner = req.user.id === meme.owner_id;
+
+      const likedRes = await db.query(
+        `
+        SELECT 1
+        FROM meme_likes
+        WHERE meme_id = $1 AND user_id = $2
+        `,
+        [memeId, req.user.id]
+      );
+
+      viewerLiked = !!likedRes.rows[0];
+    }
+
+    /* =============================
+       RESPONSE
+    ============================== */
     res.json({
       success: true,
       meme: {
-        id: row.id,
-        caption: row.caption,
-        media_url: row.media_url,
-        created_at: row.created_at,
-        is_nft: row.is_nft,
+        id: meme.id,
+        caption: meme.caption,
+        media_url: meme.media_url,
+        created_at: meme.created_at,
+        is_nft: meme.is_nft,
 
         owner: {
-          id: row.owner_id,
-          username: row.username,
-          avatar_url: row.avatar_url
+          id: meme.owner_id,
+          username: meme.username,
+          avatar_url: meme.avatar_url
         },
 
         stats: {
-          likes: 0,
-          comments: 0,
+          likes: Number(likesRes.rows[0].count),
+          comments: Number(commentsRes.rows[0].count),
           tips_hbr: 0
         },
 
         viewer: {
-          is_owner: req.user
-            ? req.user.id === row.owner_id
-            : false
+          is_owner: isOwner,
+          liked: viewerLiked
         },
 
         marketplace: null
