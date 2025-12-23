@@ -52,6 +52,15 @@ router.get("/:id", authMiddlewareOptional, async (req, res) => {
       [memeId]
     );
 
+    const tipsRes = await db.query(
+  `
+  SELECT COALESCE(SUM(amount), 0) AS total
+  FROM meme_tips
+  WHERE meme_id = $1
+  `,
+  [memeId]
+);
+
     const commentsRes = await db.query(
       `SELECT COUNT(*) FROM meme_comments WHERE meme_id = $1`,
       [memeId]
@@ -99,7 +108,7 @@ router.get("/:id", authMiddlewareOptional, async (req, res) => {
         stats: {
           likes: Number(likesRes.rows[0].count),
           comments: Number(commentsRes.rows[0].count),
-          tips_hbr: 0
+          tips_hbr: Number(tipsRes.rows[0].total)
         },
 
         viewer: {
